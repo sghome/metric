@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+
+<meta charset="UTF-8">
+<title>Analytics Intelligence Report</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script src="https://cdn.jsdelivr.net/npm/gsap@3/dist/gsap.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/gsap@3/dist/ScrollTrigger.min.js"></script>
+
+<link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+
+<style>
+
+body{
+margin:0;
+font-family:Inter;
+background:#0b0c10;
+color:white;
+}
+
+section{
+padding:80px 8%;
+}
+
+.hero{
+
+height:70vh;
+display:flex;
+flex-direction:column;
+justify-content:center;
+align-items:center;
+text-align:center;
+
+background:
+radial-gradient(circle at 20% 20%,#1a1d25,transparent),
+radial-gradient(circle at 80% 80%,#1a1d25,transparent);
+
+}
+
+.hero h1{
+font-size:60px;
+margin-bottom:10px;
+}
+
+.metrics{
+
+display:grid;
+grid-template-columns:repeat(4,1fr);
+gap:30px;
+margin-top:60px;
+
+}
+
+.metric{
+
+background:#14161d;
+padding:30px;
+border-radius:14px;
+text-align:center;
+
+}
+
+.metric .value{
+font-size:42px;
+font-weight:700;
+}
+
+.metric .label{
+opacity:.6;
+}
+
+.gridCharts{
+
+display:grid;
+grid-template-columns:repeat(2,1fr);
+gap:40px;
+
+}
+
+.card{
+
+background:#14161d;
+padding:30px;
+border-radius:14px;
+
+}
+
+.card canvas{
+height:300px;
+}
+
+#map{
+
+height:500px;
+border-radius:14px;
+
+}
+
+.tables{
+
+display:grid;
+grid-template-columns:1fr 1fr;
+gap:40px;
+
+}
+
+table{
+width:100%;
+border-collapse:collapse;
+}
+
+td{
+padding:10px;
+border-bottom:1px solid #2a2d36;
+font-size:13px;
+}
+
+.title{
+font-size:32px;
+margin-bottom:30px;
+}
+
+</style>
+
+</head>
+
+<body>
+
+
+<!-- HERO -->
+
+<section class="hero">
+
+<h1>Monthly Analytics Intelligence</h1>
+<p>Performance overview of your digital traffic</p>
+
+<div class="metrics">
+
+<div class="metric">
+<div class="value" id="users"></div>
+<div class="label">Active Users</div>
+</div>
+
+<div class="metric">
+<div class="value" id="newUsers"></div>
+<div class="label">New Users</div>
+</div>
+
+<div class="metric">
+<div class="value" id="sessions"></div>
+<div class="label">Sessions</div>
+</div>
+
+<div class="metric">
+<div class="value" id="views"></div>
+<div class="label">Page Views</div>
+</div>
+
+</div>
+
+</section>
+
+
+<!-- ANALYTICS GRID -->
+
+<section>
+
+<div class="title">Traffic Insights</div>
+
+<div class="gridCharts">
+
+<div class="card">
+<canvas id="trendChart"></canvas>
+</div>
+
+<div class="card">
+<canvas id="countryChart"></canvas>
+</div>
+
+<div class="card">
+<canvas id="deviceChart"></canvas>
+</div>
+
+<div class="card">
+<canvas id="browserChart"></canvas>
+</div>
+
+</div>
+
+</section>
+
+
+
+<!-- MAP -->
+
+<section>
+
+<div class="title">Global Audience</div>
+
+<div id="map"></div>
+
+</section>
+
+
+
+<!-- BEHAVIOR -->
+
+<section>
+
+<div class="title">User Behavior</div>
+
+<div class="gridCharts">
+
+<div class="card">
+<canvas id="osChart"></canvas>
+</div>
+
+<div class="card">
+<canvas id="eventsChart"></canvas>
+</div>
+
+</div>
+
+</section>
+
+
+
+<!-- CONTENT -->
+
+<section>
+
+<div class="title">Content Performance</div>
+
+<div class="tables">
+
+<table id="pagesTable"></table>
+
+<table id="landingTable"></table>
+
+</div>
+
+</section>
+
+
+
+<script>
+
+gsap.registerPlugin(ScrollTrigger)
+
+const API="/api/analytics"
+
+
+async function load(){
+
+const r=await fetch(API)
+const data=await r.json()
+
+
+/* SUMMARY */
+
+users.innerText=data.summary.activeUsers
+newUsers.innerText=data.summary.newUsers
+sessions.innerText=data.summary.sessions
+views.innerText=data.summary.pageViews
+
+
+/* USERS TREND */
+
+new Chart(trendChart,{
+type:"line",
+data:{
+labels:data.trend.dates,
+datasets:[{
+label:"Users",
+data:data.trend.users,
+tension:.4
+}]
+}
+})
+
+
+/* COUNTRIES */
+
+new Chart(countryChart,{
+type:"bar",
+data:{
+labels:data.countries.labels,
+datasets:[{data:data.countries.values}]
+}
+})
+
+
+/* DEVICES */
+
+new Chart(deviceChart,{
+type:"doughnut",
+data:{
+labels:data.devices.labels,
+datasets:[{data:data.devices.values}]
+}
+})
+
+
+/* BROWSER */
+
+new Chart(browserChart,{
+type:"pie",
+data:{
+labels:data.browser.labels,
+datasets:[{data:data.browser.values}]
+}
+})
+
+
+/* OS */
+
+new Chart(osChart,{
+type:"bar",
+data:{
+labels:data.os.labels,
+datasets:[{data:data.os.values}]
+}
+})
+
+
+/* EVENTS */
+
+new Chart(eventsChart,{
+type:"polarArea",
+data:{
+labels:data.events.labels,
+datasets:[{data:data.events.values}]
+}
+})
+
+
+/* MAP */
+
+const map=L.map("map").setView([20,0],2)
+
+L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png").addTo(map)
+
+
+const coords={
+
+France:[46,2],
+Mexico:[23,-102],
+Netherlands:[52,5],
+"United States":[37,-95],
+Germany:[51,10],
+India:[21,78],
+Poland:[52,19],
+"Costa Rica":[9,-84],
+"El Salvador":[13,-88],
+"Dominican Republic":[19,-70]
+
+}
+
+data.countries.labels.forEach((c,i)=>{
+
+const latlng=coords[c]
+
+if(!latlng)return
+
+L.circle(latlng,{
+radius:data.countries.values[i]*40000
+}).addTo(map)
+
+.bindPopup(c+" "+data.countries.values[i])
+
+})
+
+
+/* PAGES TABLE */
+
+data.pages.labels.forEach((p,i)=>{
+
+pagesTable.innerHTML+=`
+<tr>
+<td>${p}</td>
+<td>${data.pages.values[i]}</td>
+</tr>
+`
+
+})
+
+
+/* LANDING */
+
+data.landing.labels.forEach((p,i)=>{
+
+landingTable.innerHTML+=`
+<tr>
+<td>${p}</td>
+<td>${data.landing.values[i]}</td>
+</tr>
+`
+
+})
+
+
+}
+
+
+
+/* PARALLAX ANIMATIONS */
+
+gsap.utils.toArray(".card").forEach(el=>{
+
+gsap.from(el,{
+
+y:80,
+opacity:0,
+duration:1,
+
+scrollTrigger:{
+trigger:el,
+start:"top 80%"
+}
+
+})
+
+})
+
+
+load()
+
+</script>
+
+</body>
+
+</html>

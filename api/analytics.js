@@ -13,10 +13,8 @@ const labels=[]
 const values=[]
 
 rows?.forEach(r=>{
-
 labels.push(r.dimensionValues[0].value)
 values.push(Number(r.metricValues[0].value))
-
 })
 
 return {labels,values}
@@ -24,22 +22,18 @@ return {labels,values}
 }
 
 
-export default async function handler(req,res){
+export async function handler(event,context){
 
 try{
-
-/* SUMMARY */
 
 const [summaryReport] = await analytics.runReport({
 
 property:`properties/${propertyId}`,
 
-dateRanges:[
-{
+dateRanges:[{
 startDate:"30daysAgo",
 endDate:"today"
-}
-],
+}],
 
 metrics:[
 {name:"activeUsers"},
@@ -55,246 +49,169 @@ metrics:[
 const summaryRow = summaryReport.rows?.[0]
 
 
-/* TREND */
-
 const [trendReport] = await analytics.runReport({
 
 property:`properties/${propertyId}`,
 
-dateRanges:[
-{
+dateRanges:[{
 startDate:"30daysAgo",
 endDate:"today"
-}
-],
+}],
 
-dimensions:[
-{name:"date"}
-],
+dimensions:[{name:"date"}],
 
-metrics:[
-{name:"activeUsers"}
-]
+metrics:[{name:"activeUsers"}]
 
 })
 
-
-/* COUNTRIES */
 
 const [countryReport] = await analytics.runReport({
 
 property:`properties/${propertyId}`,
 
-dateRanges:[
-{
+dateRanges:[{
 startDate:"30daysAgo",
 endDate:"today"
-}
-],
+}],
 
-dimensions:[
-{name:"country"}
-],
+dimensions:[{name:"country"}],
 
-metrics:[
-{name:"activeUsers"}
-],
+metrics:[{name:"activeUsers"}],
 
 limit:10
 
 })
 
 
-/* DEVICES */
-
 const [deviceReport] = await analytics.runReport({
 
 property:`properties/${propertyId}`,
 
-dateRanges:[
-{
+dateRanges:[{
 startDate:"30daysAgo",
 endDate:"today"
-}
-],
+}],
 
-dimensions:[
-{name:"deviceCategory"}
-],
+dimensions:[{name:"deviceCategory"}],
 
-metrics:[
-{name:"activeUsers"}
-]
+metrics:[{name:"activeUsers"}]
 
 })
 
-
-/* OPERATING SYSTEM */
 
 const [osReport] = await analytics.runReport({
 
 property:`properties/${propertyId}`,
 
-dateRanges:[
-{
+dateRanges:[{
 startDate:"30daysAgo",
 endDate:"today"
-}
-],
+}],
 
-dimensions:[
-{name:"operatingSystem"}
-],
+dimensions:[{name:"operatingSystem"}],
 
-metrics:[
-{name:"activeUsers"}
-]
+metrics:[{name:"activeUsers"}]
 
 })
 
-
-/* BROWSERS */
 
 const [browserReport] = await analytics.runReport({
 
 property:`properties/${propertyId}`,
 
-dateRanges:[
-{
+dateRanges:[{
 startDate:"30daysAgo",
 endDate:"today"
-}
-],
+}],
 
-dimensions:[
-{name:"browser"}
-],
+dimensions:[{name:"browser"}],
 
-metrics:[
-{name:"activeUsers"}
-]
+metrics:[{name:"activeUsers"}]
 
 })
 
-
-/* EVENTS */
 
 const [eventsReport] = await analytics.runReport({
 
 property:`properties/${propertyId}`,
 
-dateRanges:[
-{
+dateRanges:[{
 startDate:"30daysAgo",
 endDate:"today"
-}
-],
+}],
 
-dimensions:[
-{name:"eventName"}
-],
+dimensions:[{name:"eventName"}],
 
-metrics:[
-{name:"eventCount"}
-]
+metrics:[{name:"eventCount"}]
 
 })
 
-
-/* TRAFFIC SOURCES */
 
 const [trafficReport] = await analytics.runReport({
 
 property:`properties/${propertyId}`,
 
-dateRanges:[
-{
+dateRanges:[{
 startDate:"30daysAgo",
 endDate:"today"
-}
-],
+}],
 
 dimensions:[
 {name:"sessionSource"},
 {name:"sessionMedium"}
 ],
 
-metrics:[
-{name:"sessions"}
-]
+metrics:[{name:"sessions"}]
 
 })
 
-
-/* LANDING PAGES */
 
 const [landingReport] = await analytics.runReport({
 
 property:`properties/${propertyId}`,
 
-dateRanges:[
-{
+dateRanges:[{
 startDate:"30daysAgo",
 endDate:"today"
-}
-],
+}],
 
-dimensions:[
-{name:"landingPagePlusQueryString"}
-],
+dimensions:[{name:"landingPagePlusQueryString"}],
 
-metrics:[
-{name:"sessions"}
-],
+metrics:[{name:"sessions"}],
 
 limit:10
 
 })
 
-
-/* TOP PAGES */
 
 const [pagesReport] = await analytics.runReport({
 
 property:`properties/${propertyId}`,
 
-dateRanges:[
-{
+dateRanges:[{
 startDate:"30daysAgo",
 endDate:"today"
-}
-],
+}],
 
-dimensions:[
-{name:"pagePath"}
-],
+dimensions:[{name:"pagePath"}],
 
-metrics:[
-{name:"screenPageViews"}
-],
+metrics:[{name:"screenPageViews"}],
 
 limit:10
 
 })
 
 
-
-/* TREND FORMAT */
-
 const dates=[]
 const users=[]
 
 trendReport.rows?.forEach(row=>{
-
 dates.push(row.dimensionValues[0].value)
 users.push(Number(row.metricValues[0].value))
-
 })
 
 
-/* RESPONSE */
-
-res.status(200).json({
+const response={
 
 summary:{
 activeUsers:Number(summaryRow?.metricValues[0]?.value || 0),
@@ -305,10 +222,7 @@ engagementRate:Number(summaryRow?.metricValues[4]?.value || 0),
 engagementTime:Number(summaryRow?.metricValues[5]?.value || 0)
 },
 
-trend:{
-dates,
-users
-},
+trend:{dates,users},
 
 countries:mapRows(countryReport.rows),
 
@@ -332,15 +246,32 @@ sessions:Number(r.metricValues[0].value)
 
 })) || []
 
-})
+}
+
+
+return{
+
+statusCode:200,
+
+headers:{
+"Content-Type":"application/json",
+"Access-Control-Allow-Origin":"*"
+},
+
+body:JSON.stringify(response)
+
+}
 
 }catch(e){
 
 console.log(e)
 
-res.status(500).json({
-error:"analytics error"
-})
+return{
+
+statusCode:500,
+body:JSON.stringify({error:"analytics error"})
+
+}
 
 }
 
